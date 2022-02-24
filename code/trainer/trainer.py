@@ -1,5 +1,6 @@
 from tqdm import tqdm
 
+
 class Trainer(object):
     def __init__(self, model=None, train_loader=None, val_loader=None, criterion=None, optimizer=None, device=None,
                  max_epochs=1000):

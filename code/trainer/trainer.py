@@ -13,13 +13,13 @@ class Trainer(object):
         self.max_epochs = max_epochs
         self.loss_list = []
 
-    def train(self):
+    def train(self, validation=False):
         self.model = self.model.to(self.device)
         self.model.train()
 
         for epoch in tqdm(range(self.max_epochs)):
             running_loss = 0
-            for i, data in tqdm(enumerate(self.train_loader)):
+            for i, data in enumerate(self.train_loader):
                 # get the inputs; data is a list of [inputs, labels]
                 data = data
                 inputs, targets = data
@@ -37,6 +37,6 @@ class Trainer(object):
 
                 # print statistics
                 running_loss += self.loss.item()*self.train_loader.batch_size
-            self.loss_list.append(running_loss/self.train_loader.dataset.__len__())
-            print(epoch)
-            print(running_loss)
+                training_loss = running_loss/self.train_loader.dataset.__len__()
+            self.loss_list.append(training_loss)
+            print(f"\n Epoch {epoch}/{self.max_epochs}, training loss {training_loss}")

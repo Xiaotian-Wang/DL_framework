@@ -2,6 +2,8 @@ import torch
 
 from models import Model
 from trainer import Trainer
+from record import Recorder
+from inference import Predictor
 import torchvision
 import torchvision.transforms as transforms
 import os
@@ -28,16 +30,13 @@ testloader = torch.utils.data.DataLoader(testset, batch_size=100,
 
 criterion = torch.nn.CrossEntropyLoss()
 
-"""
-trainer = Trainer(model=model, optimizer=optimizer, train_loader=trainloader, criterion=criterion,
-                  device=device)
-"""
-
 
 class Experiment(object):
 
-    def __init__(self, model=None, config=None, optimizer=None, train_loader=None, val_loader=None,
-                 criterion=None, device=None, experiment_name='NewExperiment'):
+    def __init__(self, model=None, config=None, optimizer=None,
+                 train_loader=None, val_loader=None, test_loader=None,
+                 criterion=None, device=None, experiment_name='NewExperiment',
+                 validation=False, record_training=False):
         self.model = model
         self.config = config
         self.optimizer = optimizer
@@ -45,46 +44,33 @@ class Experiment(object):
         self.criterion = criterion
         self.device = device
         self.val_loader = val_loader
-        self.trainer = Trainer(model=self.model, optimizer=self.optimizer, train_loader=self.train_loader, criterion=self.criterion,
-                  device=self.device)
+        self.test_loader = test_loader
         self.experiment_name = experiment_name
+        self.record_training =record_training
 
-    def train(self, validation=False):
-        self.trainer.train(validation=validation)
-
-    def test(self, test_loader):
-        # TODO: test the model on testing set, save the result to self
-        pass
-
-    def save_result(self):
-        saving_path = '../data/logs/'+self.experiment_name
+        self.saving_path = '../data/logs/' + self.experiment_name
         try:
-            os.mkdir(saving_path)
+            os.mkdir(self.saving_path)
         except FileExistsError:
             print('Directory Exists!')
-        else:
-            # TODO: Save the model, config and logs, testing result(if any)
 
-            # Save the model
-            os.mkdir(saving_path+'/models')
-            torch.save(self.model, saving_path+'/models/model.pth')
+        self.trainer = Trainer(model=self.model, optimizer=self.optimizer, train_loader=self.train_loader, criterion=self.criterion,
+                  device=self.device, val_loader=self.val_loader, validation=validation, record=self.record_training, experiment_name=self.experiment_name)
+        self.recorder = Recorder(model=self.model, experiment_name=self.experiment_name, config=self.config,
+                 train_loader=self.train_loader)
+        self.predictor = Predictor(model=self.model, data_loader=self.test_loader, device=self.device, criterion=self.criterion)
 
-            # Save the config info
-            os.mkdir(saving_path+'/configs')
-            with open(saving_path+'/configs/config.yaml', 'w+', encoding='utf-8') as f:
-                yaml.dump(self.config, f)
 
-            # Save the model structure
-            writer = SummaryWriter(saving_path+'/models')
-            dataiter = iter(self.train_loader)
-            inputs, targets = dataiter.next()
-            writer.add_graph(self.model, inputs)
+    def train(self):
+        self.trainer.train()
 
-            # Save the training logs
+    def test(self):
+        return self.predictor.test()
 
-            # Save the testing result
+    def save_result(self):
+        self.recorder.save_result()
 
 
 if __name__ == "__main__":
-    exp = Experiment(model=model, optimizer=optimizer, train_loader=trainloader, val_loader=None,
-                 criterion=criterion, device=device, experiment_name="exp1", config={"abc": "def"})
+    exp = Experiment(model=model, optimizer=optimizer, train_loader=trainloader, val_loader=testloader, test_loader=testloader,
+                 criterion=criterion, device=device, experiment_name="exp1", config={"abc": "def"}, validation=True, record_training=True)

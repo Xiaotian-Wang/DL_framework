@@ -10,10 +10,21 @@ import os
 import yaml
 from torch.utils.tensorboard import SummaryWriter
 
+
+# Read the model configuration
+with open('../config/config.yaml', 'r', encoding='utf-8') as f:
+    config = yaml.safe_load(f)
+
+# Initialize the model
 model = Model()
+
+# Define the optimizer
 optimizer = torch.optim.AdamW(params=model.parameters())
+
+# Select the device the model is trained on
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+# Define the dataset and dataloader
 transform = transforms.Compose(
     [transforms.ToTensor(),
      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
@@ -27,9 +38,11 @@ testset = torchvision.datasets.CIFAR10(root='../data/datasets', train=False,
                                            download=False, transform=transform)
 testloader = torch.utils.data.DataLoader(testset, batch_size=100,
                                              shuffle=False, num_workers=2)
-
+# Define the loss function
 criterion = torch.nn.CrossEntropyLoss()
 
+
+# The Experiment class
 
 class Experiment(object):
 
@@ -73,4 +86,4 @@ class Experiment(object):
 
 if __name__ == "__main__":
     exp = Experiment(model=model, optimizer=optimizer, train_loader=trainloader, val_loader=testloader, test_loader=testloader,
-                 criterion=criterion, device=device, experiment_name="exp1", config={"abc": "def"}, validation=True, record_training=True)
+                 criterion=criterion, device=device, experiment_name="exp1", config=config, validation=True, record_training=True)

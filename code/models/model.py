@@ -13,7 +13,7 @@ class Model(Module):
         self.flatten = torch.nn.Flatten(1)
     def forward(self, image):
 
-        x = self.layer(image/256)
+        x = self.layer(image)
         x = self.flatten(x)
         x = self.activation(self.linear1(x))
         x = self.activation(self.linear2(x))

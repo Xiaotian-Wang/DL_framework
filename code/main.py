@@ -4,6 +4,7 @@ from models import Model
 from trainer import Trainer
 from record import Recorder
 from inference import Predictor
+from dataloader import MyDataset
 import torchvision
 import torchvision.transforms as transforms
 import os
@@ -26,9 +27,12 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Define the dataset and dataloader
 transform = transforms.Compose(
-    [transforms.ToTensor(),
-     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-
+    [transforms.ToPILImage(),
+     transforms.Resize([255,255]),
+        transforms.ToTensor(),
+     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+     ])
+"""
 trainset = torchvision.datasets.CIFAR10(root='../data/datasets', train=True,
                                             download=False, transform=transform)
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=100,
@@ -38,6 +42,15 @@ testset = torchvision.datasets.CIFAR10(root='../data/datasets', train=False,
                                            download=False, transform=transform)
 testloader = torch.utils.data.DataLoader(testset, batch_size=100,
                                              shuffle=False, num_workers=2)
+"""
+
+trainset = MyDataset(img_dir='../data/datasets/CatsVsDogs/train', transform=transform)
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=8,
+                                              shuffle=True, num_workers=2)
+testset = MyDataset(img_dir='../data/datasets/CatsVsDogs/test1', transform=transform)
+testloader = torch.utils.data.DataLoader(trainset, batch_size=8,
+                                              shuffle=False, num_workers=2)
+
 # Define the loss function
 criterion = torch.nn.CrossEntropyLoss()
 
@@ -65,7 +78,7 @@ class Experiment(object):
         try:
             os.mkdir(self.saving_path)
         except FileExistsError:
-            print('Directory Exists!')
+            print('Experiment Directory Exists!')
 
         self.trainer = Trainer(model=self.model, optimizer=self.optimizer, train_loader=self.train_loader, criterion=self.criterion,
                   device=self.device, val_loader=self.val_loader, validation=validation, record=self.record_training, experiment_name=self.experiment_name)
@@ -86,4 +99,4 @@ class Experiment(object):
 
 if __name__ == "__main__":
     exp = Experiment(model=model, optimizer=optimizer, train_loader=trainloader, val_loader=testloader, test_loader=testloader,
-                 criterion=criterion, device=device, experiment_name="exp1", config=config, validation=True, record_training=True)
+                 criterion=criterion, device=device, experiment_name="catvsdog", config=config, validation=True, record_training=True)
